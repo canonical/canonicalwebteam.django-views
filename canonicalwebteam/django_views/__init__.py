@@ -2,34 +2,47 @@
 import os
 
 # Packages
-from django.views.generic.base import TemplateView
 from django.http import Http404
-from django.conf import settings
+from django.template import Context, loader, TemplateDoesNotExist
+from django.views.generic.base import TemplateView
 import frontmatter
 import mistune
 
 
-def _absolute_template_path(path, origin_filepath):
+def _template_exists(path):
     """
-    Infer an absolute path to a template from a partial path
+    Check if a template exists
+    without raising an exception
+    """
+
+    try:
+        loader.get_template(path)
+        return True
+    except TemplateDoesNotExist:
+        return False
+
+
+def _template_path(path, origin_filepath):
+    """
+    Infer a path to a template from a partial path
 
     - If the path starts with a "/",
-      simply prepend it with settings.TEMPLATE_FINDER_PATH
+      simply ask Django to locate the template
     - If the path doesn't start with a "/",
       work out the absolute path relative to the origin_filepath
     """
 
     if path.startswith("/"):
-        # "absolute" path, simply use the TEMPLATE_FINDER_PATH root
-        template_filepath = os.path.join(
-            settings.TEMPLATE_FINDER_PATH, path.lstrip("/")
-        )
+        # "absolute" path, just strip the leading "/"
+        # so template loader can do its work
+        path = path.lstrip("/")
     else:
         # "relative" path, use the existing filepath
-        directory = os.path.dirname(origin_filepath)
-        template_filepath = os.path.abspath(os.path.join(directory, path))
+        path = os.path.relpath(
+            os.path.join(os.path.dirname(origin_filepath), path)
+        )
 
-    return template_filepath
+    return path
 
 
 def _find_matching_template(path):
@@ -37,28 +50,22 @@ def _find_matching_template(path):
     Given a basic path, find an HTML or Markdown file
     """
 
-    # Build basic search path
-    base_filepath = os.path.join(
-        settings.TEMPLATE_FINDER_PATH, path.strip("/")
-    )
-
     # Try to match HTML or Markdown files
-    if os.path.isfile(base_filepath + ".html"):
-        matched_filepath = base_filepath + ".html"
-    elif os.path.isfile(base_filepath + "/index.html"):
-        matched_filepath = base_filepath + "/index.html"
-    elif os.path.isfile(base_filepath + ".md"):
-        matched_filepath = base_filepath + ".md"
-    elif os.path.isfile(base_filepath + "/index.md"):
-        matched_filepath = base_filepath + "/index.md"
+    if _template_exists(path + ".html"):
+        return path + ".html"
+    elif _template_exists(os.path.join(path, "index.html")):
+        return os.path.join(path, "index.html")
+    elif _template_exists(path + ".md"):
+        return path + ".md"
+    elif _template_exists(os.path.join(path, "index.md")):
+        return os.path.join(path, "index.md")
 
-    return matched_filepath
+    return None
 
 
 class TemplateFinder(TemplateView):
     parse_markdown = mistune.Markdown(
-        parse_block_html=True,
-        parse_inline_html=True,
+        parse_block_html=True, parse_inline_html=True
     )
 
     def _parse_markdown_file(self, filepath):
@@ -71,7 +78,9 @@ class TemplateFinder(TemplateView):
         """
 
         # Parse frontmatter, and add it to context
-        markdown = frontmatter.load(filepath)
+        markdown_template = loader.get_template(filepath)
+        file_contents = markdown_template.template.render(Context())
+        markdown = frontmatter.loads(file_contents)
 
         # Set the template path
         wrapper_template = markdown.metadata.get("wrapper_template")
@@ -83,7 +92,7 @@ class TemplateFinder(TemplateView):
             return None
 
         if wrapper_template:
-            template_filepath = _absolute_template_path(
+            template_filepath = _template_path(
                 wrapper_template, filepath
             )
         else:
@@ -96,12 +105,16 @@ class TemplateFinder(TemplateView):
         for key, path in markdown.metadata.get(
             "markdown_includes", {}
         ).items():
-            include_path = _absolute_template_path(path, filepath)
+            include_path = _template_path(path, filepath)
+            include_content = loader.get_template(
+                include_path
+            ).template.render(Context())
+            context[key] = self.parse_markdown(include_content)
 
-            with open(include_path) as include:
-                context[key] = self.parse_markdown(include.read())
-
-        return {"context": context, "template_filepath": template_filepath}
+        return {
+            "context": context,
+            "template_filepath": template_filepath,
+        }
 
     def render_to_response(self, context, **response_kwargs):
         """
@@ -116,7 +129,9 @@ class TemplateFinder(TemplateView):
         response_kwargs.setdefault("content_type", self.content_type)
 
         # Find .html or .md template files
-        template_filepath = _find_matching_template(self.request.path)
+        template_filepath = _find_matching_template(
+            self.request.path.lstrip("/")
+        )
 
         # If we found a Markdown file, parse it to find its wrapper template
         if template_filepath.endswith(".md"):

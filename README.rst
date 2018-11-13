@@ -27,11 +27,6 @@ Here's an example of how to make use of ``TemplateFinder`` in your
 Django app:
 
 .. code:: python
-
-    # settings.py
-    TEMPLATE_FINDER_PATH = os.path.join(BASE_DIR, 'templates')
-
-
     # urls.py
     from django.conf.urls import url
     from canonicalwebteam.django_views import TemplateFinder
@@ -45,13 +40,13 @@ When the app parses a URL, it will look for templates in the following
 locations, in order:
 
 -  ``/parent/location/`` =>
-   ``{TEMPLATE_FINDER_PATH}/parent/location.html``
+   ``templates/parent/location.html``
 -  ``/parent/location/`` =>
-   ``{TEMPLATE_FINDER_PATH}/parent/location/index.html``
+   ``templates/parent/location/index.html``
 -  ``/parent/location/`` =>
-   ``{TEMPLATE_FINDER_PATH}/parent/location.md``
+   ``templates/parent/location.md``
 -  ``/parent/location/`` =>
-   ``{TEMPLATE_FINDER_PATH}/parent/location/index.md``
+   ``templates/parent/location/index.md``
 
 Markdown parsing
 ~~~~~~~~~~~~~~~~
