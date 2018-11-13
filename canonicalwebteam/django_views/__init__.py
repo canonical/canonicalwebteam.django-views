@@ -133,15 +133,15 @@ class TemplateFinder(TemplateView):
             self.request.path.lstrip("/")
         )
 
+        # If we couldn't find the template, show 404
+        if not template_filepath:
+            raise Http404("Can't find template for " + self.request.path)
+
         # If we found a Markdown file, parse it to find its wrapper template
         if template_filepath.endswith(".md"):
             markdown_data = self._parse_markdown_file(template_filepath)
             template_filepath = markdown_data["template_filepath"]
             context.update(markdown_data["context"])
-
-        # If we couldn't find the template, show 404
-        if not template_filepath:
-            raise Http404("Can't find template for " + self.request.path)
 
         # Send the response
         return self.response_class(

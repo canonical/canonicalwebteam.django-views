@@ -1,2 +1,3 @@
 v1.0.0, 2018-11-13 -- Initial release, envolved from django-template-finder-view
 v1.1.0, 2018-11-13 -- Base template finding and parsing off existing Django templates; remove TEMPLATE_FINDER_PATH
+v1.1.1, 2018-11-13 -- Avoid .endswith error for 404 URLs
