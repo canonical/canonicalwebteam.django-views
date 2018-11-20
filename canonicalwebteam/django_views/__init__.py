@@ -6,7 +6,7 @@ from django.http import Http404
 from django.template import Context, loader, TemplateDoesNotExist
 from django.views.generic.base import TemplateView
 import frontmatter
-import mistune
+from mistune import Markdown, BlockLexer, BlockGrammar
 
 
 def _template_exists(path):
@@ -63,9 +63,18 @@ def _find_matching_template(path):
     return None
 
 
+class WebteamBlockLexer(BlockLexer):
+    list_rules = (
+        'newline', 'block_code', 'fences', 'lheading', 'hrule',
+        'table', 'nptable',
+        'block_quote', 'list_block', 'block_html', 'text',
+    )
+
+
 class TemplateFinder(TemplateView):
-    parse_markdown = mistune.Markdown(
-        parse_block_html=True, parse_inline_html=True
+    parse_markdown = Markdown(
+        parse_block_html=True, parse_inline_html=True,
+        block=WebteamBlockLexer()
     )
 
     def _parse_markdown_file(self, filepath):
