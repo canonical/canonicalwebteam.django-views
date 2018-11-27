@@ -51,7 +51,9 @@ def _find_matching_template(path):
     """
 
     # Try to match HTML or Markdown files
-    if _template_exists(path + ".html"):
+    if _template_exists(path):
+        return path
+    elif _template_exists(path + ".html"):
         return path + ".html"
     elif _template_exists(os.path.join(path, "index.html")):
         return os.path.join(path, "index.html")
