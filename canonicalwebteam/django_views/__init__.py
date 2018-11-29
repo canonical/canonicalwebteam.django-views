@@ -6,7 +6,7 @@ from django.http import Http404
 from django.template import Context, loader, TemplateDoesNotExist
 from django.views.generic.base import TemplateView
 import frontmatter
-from mistune import Markdown, BlockLexer, BlockGrammar
+from mistune import Markdown, BlockLexer
 
 
 def _template_exists(path):
@@ -65,16 +65,25 @@ def _find_matching_template(path):
 
 class WebteamBlockLexer(BlockLexer):
     list_rules = (
-        'newline', 'block_code', 'fences', 'lheading', 'hrule',
-        'table', 'nptable',
-        'block_quote', 'list_block', 'block_html', 'text',
+        "newline",
+        "block_code",
+        "fences",
+        "lheading",
+        "hrule",
+        "table",
+        "nptable",
+        "block_quote",
+        "list_block",
+        "block_html",
+        "text",
     )
 
 
 class TemplateFinder(TemplateView):
     parse_markdown = Markdown(
-        parse_block_html=True, parse_inline_html=True,
-        block=WebteamBlockLexer()
+        parse_block_html=True,
+        parse_inline_html=True,
+        block=WebteamBlockLexer(),
     )
 
     def _parse_markdown_file(self, filepath):
@@ -100,12 +109,7 @@ class TemplateFinder(TemplateView):
             # this doesn't count as a valid Markdown file
             return None
 
-        if wrapper_template:
-            template_filepath = _template_path(
-                wrapper_template, filepath
-            )
-        else:
-            template_filepath = None
+        template_filepath = _template_path(wrapper_template, filepath)
 
         # Parse core HTML content
         context["html_content"] = self.parse_markdown(markdown.content)
@@ -120,10 +124,7 @@ class TemplateFinder(TemplateView):
             ).template.render(Context())
             context[key] = self.parse_markdown(include_content)
 
-        return {
-            "context": context,
-            "template_filepath": template_filepath,
-        }
+        return {"context": context, "template_filepath": template_filepath}
 
     def render_to_response(self, context, **response_kwargs):
         """
@@ -149,6 +150,12 @@ class TemplateFinder(TemplateView):
         # If we found a Markdown file, parse it to find its wrapper template
         if template_filepath.endswith(".md"):
             markdown_data = self._parse_markdown_file(template_filepath)
+
+            if not markdown_data:
+                raise Http404(
+                    self.request.path + " not correctly configurated."
+                )
+
             template_filepath = markdown_data["template_filepath"]
             context.update(markdown_data["context"])
 
@@ -160,12 +167,3 @@ class TemplateFinder(TemplateView):
             using=self.template_engine,
             **response_kwargs
         )
-
-    def get_template_names(self):
-        """
-        Template finding and parsing is now handled in
-        render_to_response(), and so get_template_names is
-        not needed
-        """
-
-        raise NotImplementedError()
