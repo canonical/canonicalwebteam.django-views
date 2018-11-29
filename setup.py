@@ -19,4 +19,6 @@ setup(
         "python-frontmatter",
         "django",
     ],
+    tests_require=["Django"],
+    test_suite="tests",
 )
