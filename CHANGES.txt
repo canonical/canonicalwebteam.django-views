@@ -3,3 +3,4 @@ v1.1.0, 2018-11-13 -- Base template finding and parsing off existing Django temp
 v1.1.1, 2018-11-13 -- Avoid .endswith error for 404 URLs
 v1.2.0, 2018-11-20 -- Support table in lists
 v1.2.1, 2018-11-29 -- Complete test coverage
+v1.3.2, 2018-12-05 -- Case-insensitive matching
