@@ -2,11 +2,28 @@
 import os
 
 # Packages
-from django.http import Http404
+import frontmatter
+import glob
+import re
+from django.http import Http404, HttpResponseRedirect
 from django.template import Context, loader, TemplateDoesNotExist
 from django.views.generic.base import TemplateView
-import frontmatter
 from mistune import Markdown, BlockLexer
+
+
+def _insensitive_glob(pattern, base_dir):
+    """
+    Look for files with glob patterns,
+    but case ignoring case
+    """
+
+    def either(c):
+        return "[%s%s]" % (c.lower(), c.upper()) if c.isalpha() else c
+
+    search = "".join(map(either, pattern))
+    search_path = os.path.join(base_dir, search)
+
+    return glob.glob(search_path)
 
 
 def _template_exists(path):
@@ -22,7 +39,38 @@ def _template_exists(path):
         return False
 
 
-def _template_path(path, origin_filepath):
+def _find_template_url(path):
+    """
+    Look for a template by:
+    - checking for case-insensitive matches
+    - seeing if the URL exactly matches the filename,
+      with extension
+    """
+
+    matches = []
+
+    template_dirs = loader.engines.templates["django"]["DIRS"]
+
+    for template_dir in template_dirs:
+        for match in (
+            _insensitive_glob(path, template_dir)
+            + _insensitive_glob(path + ".html", template_dir)
+            + _insensitive_glob(path + ".md", template_dir)
+        ):
+            cleaned_match = re.sub(r"^" + template_dir, "", match)
+            cleaned_match = re.sub(r"\.(html|md)$", "", cleaned_match)
+            matches.append(cleaned_match)
+
+    # Only return a found template if we found only one
+    if (
+        len(matches) == 1
+        and matches[0].lower() == "/" + path.lower()
+        and _get_template(matches[0].lstrip("/"))
+    ):
+        return matches[0]
+
+
+def _relative_template_path(path, origin_filepath):
     """
     Infer a path to a template from a partial path
 
@@ -45,20 +93,20 @@ def _template_path(path, origin_filepath):
     return path
 
 
-def _find_matching_template(path):
+def _get_template(url_path):
     """
     Given a basic path, find an HTML or Markdown file
     """
 
     # Try to match HTML or Markdown files
-    if _template_exists(path + ".html"):
-        return path + ".html"
-    elif _template_exists(os.path.join(path, "index.html")):
-        return os.path.join(path, "index.html")
-    elif _template_exists(path + ".md"):
-        return path + ".md"
-    elif _template_exists(os.path.join(path, "index.md")):
-        return os.path.join(path, "index.md")
+    if _template_exists(url_path + ".html"):
+        return url_path + ".html"
+    elif _template_exists(os.path.join(url_path, "index.html")):
+        return os.path.join(url_path, "index.html")
+    elif _template_exists(url_path + ".md"):
+        return url_path + ".md"
+    elif _template_exists(os.path.join(url_path, "index.md")):
+        return os.path.join(url_path, "index.md")
 
     return None
 
@@ -109,7 +157,7 @@ class TemplateFinder(TemplateView):
             # this doesn't count as a valid Markdown file
             return None
 
-        template_filepath = _template_path(wrapper_template, filepath)
+        template_filepath = _relative_template_path(wrapper_template, filepath)
 
         # Parse core HTML content
         context["html_content"] = self.parse_markdown(markdown.content)
@@ -118,13 +166,13 @@ class TemplateFinder(TemplateView):
         for key, path in markdown.metadata.get(
             "markdown_includes", {}
         ).items():
-            include_path = _template_path(path, filepath)
+            include_path = _relative_template_path(path, filepath)
             include_content = loader.get_template(
                 include_path
             ).template.render(Context())
             context[key] = self.parse_markdown(include_content)
 
-        return {"context": context, "template_filepath": template_filepath}
+        return {"context": context, "template": template_filepath}
 
     def render_to_response(self, context, **response_kwargs):
         """
@@ -133,36 +181,38 @@ class TemplateFinder(TemplateView):
         Pass response_kwargs to the constructor of the response class.
         """
 
-        template_filepath = None
-
         # Response defaults
         response_kwargs.setdefault("content_type", self.content_type)
 
         # Find .html or .md template files
-        template_filepath = _find_matching_template(
-            self.request.path.lstrip("/")
-        )
+        path = self.request.path.lstrip("/")
+        matching_template = _get_template(path)
 
         # If we couldn't find the template, show 404
-        if not template_filepath:
-            raise Http404("Can't find template for " + self.request.path)
+        if not matching_template:
+            found_template_url = _find_template_url(path)
+
+            if found_template_url:
+                return HttpResponseRedirect(found_template_url)
+            else:
+                raise Http404("Can't find template for " + self.request.path)
 
         # If we found a Markdown file, parse it to find its wrapper template
-        if template_filepath.endswith(".md"):
-            markdown_data = self._parse_markdown_file(template_filepath)
+        if matching_template.endswith(".md"):
+            markdown_data = self._parse_markdown_file(matching_template)
 
             if not markdown_data:
                 raise Http404(
                     self.request.path + " not correctly configurated."
                 )
 
-            template_filepath = markdown_data["template_filepath"]
+            matching_template = markdown_data["template"]
             context.update(markdown_data["context"])
 
         # Send the response
         return self.response_class(
             request=self.request,
-            template=template_filepath,
+            template=matching_template,
             context=context,
             using=self.template_engine,
             **response_kwargs
