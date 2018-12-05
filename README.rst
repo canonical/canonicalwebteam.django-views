@@ -1,6 +1,8 @@
 canonicalwebteam.django\_views
 ==============================
 
+|CircleCI build status| |Code coverage|
+
 Views for Django apps, primarily for use in Webteam Django apps.
 
 Installation
@@ -90,3 +92,9 @@ Here's an example Markdown file:
     ## GitHub
 
     I also have [a GitHub page](https://github.com/me).
+
+.. |CircleCI build status| image:: https://circleci.com/gh/canonical-webteam/yaml-responses.svg?style=shield
+   :target: https://circleci.com/gh/canonical-webteam/yaml-responses
+.. |Code coverage| image:: https://codecov.io/gh/canonical-webteam/yaml-responses/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/canonical-webteam/yaml-responses
+
