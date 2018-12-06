@@ -68,6 +68,36 @@ class TestTemplateFinder(unittest.TestCase):
         self.assertEqual(response_two.status_code, 200)
         self.assertEqual(response_two.content, b"subpath index\n")
 
+    def test_case_insensitive_url(self):
+        """
+        If a mixed-case URL is provided, which would match a filepath
+        case-insensitively, a redirect should be returned to the correct
+        URL for the file
+        """
+
+        response_one = self.django_client.get("/A-dIreCtory")
+        response_two = self.django_client.get("/a-FILe")
+        response_three = self.django_client.get("/a-directory/anoTHer-File")
+        response_four = self.django_client.get("/a-DIRectoRY/ANOther-FILE")
+        response_five = self.django_client.get("/a-directory/mixed-case")
+
+        self.assertEqual(response_one.status_code, 302)
+        self.assertEqual(response_one.get("location"), "/a-directory")
+        self.assertEqual(response_two.status_code, 302)
+        self.assertEqual(response_two.get("location"), "/a-file")
+        self.assertEqual(response_three.status_code, 302)
+        self.assertEqual(
+            response_three.get("location"), "/a-directory/another-file"
+        )
+        self.assertEqual(response_four.status_code, 302)
+        self.assertEqual(
+            response_four.get("location"), "/a-directory/another-file"
+        )
+        self.assertEqual(response_five.status_code, 302)
+        self.assertEqual(
+            response_five.get("location"), "/a-directory/mIXed-CAse"
+        )
+
     def test_markdown_files_without_wrapper_template(self):
         """
         If a Markdown file doesn't have `wrapper_template` in the frontmatter,
