@@ -98,6 +98,26 @@ class TestTemplateFinder(unittest.TestCase):
             response_five.get("location"), "/a-directory/mIXed-CAse"
         )
 
+    def test_full_filename_not_found(self):
+        """
+        Check if we request the full filename of an existing file,
+        we get a 404.
+        """
+
+        response_one = self.django_client.get("/a-file.html")
+        response_two = self.django_client.get("/a-directory/another-file.html")
+        response_three = self.django_client.get(
+            "/a-directory/another-FILE.html"
+        )
+        response_four = self.django_client.get("/md-files/a-FILE.md")
+
+        self.assertEqual(response_one.status_code, 404)
+        self.assertEqual(response_two.status_code, 404)
+        self.assertEqual(response_three.status_code, 404)
+        self.assertEqual(response_four.status_code, 404)
+
+    # Markdown functionality tests
+    # ===
     def test_markdown_files_without_wrapper_template(self):
         """
         If a Markdown file doesn't have `wrapper_template` in the frontmatter,
