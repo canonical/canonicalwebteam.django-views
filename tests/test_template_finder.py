@@ -28,15 +28,30 @@ class TestTemplateFinder(unittest.TestCase):
 
     def test_404(self):
         """
-        When given a URL to a non-existent file,
-        return a 404
+        When given a URL that's not of the expected format to
+        locate an existing file, return a 404
         """
 
-        response_one = self.django_client.get("/missing-file")
-        response_two = self.django_client.get("/missing-file.html")
+        urls = [
+            "/missing-file",  # Non-existent file
+            "/missing-file.html"  # Non-existent file with extension
+            "/empty-dir"  # Dir with no index
+            "/empty-dir/missing.html"  # Non-existent file in dir
+            "/non-dir/a-file.html",  # Non-existent directory's file
+            "/index.html",  # Full index filename
+            "/a-directory/another-file.html",  # Full filename in dir
+            "/a-diREctory/another-FILE.html",  # Same, mixed case
+            "/a-directory/index.html",  # Directory index filename
+            "/a-directory/iNDex.html",  # Same, mixed case
+            "/md-files/a-file.md",  # Full filename for MD file
+            "/md-files/a-FILE.md",  # Same, mixed case
+            "/md-files/index.md",  # Full filename for MD directory index
+            "/md-fILes/INdex.md",  # Same, mixed case
+        ]
 
-        self.assertEqual(response_one.status_code, 404)
-        self.assertEqual(response_two.status_code, 404)
+        for url in urls:
+            response = self.django_client.get(url)
+            self.assertEqual(response.status_code, 404)
 
     def test_direct_files(self):
         """
@@ -97,24 +112,6 @@ class TestTemplateFinder(unittest.TestCase):
         self.assertEqual(
             response_five.get("location"), "/a-directory/mIXed-CAse"
         )
-
-    def test_full_filename_not_found(self):
-        """
-        Check if we request the full filename of an existing file,
-        we get a 404.
-        """
-
-        response_one = self.django_client.get("/a-file.html")
-        response_two = self.django_client.get("/a-directory/another-file.html")
-        response_three = self.django_client.get(
-            "/a-directory/another-FILE.html"
-        )
-        response_four = self.django_client.get("/md-files/a-FILE.md")
-
-        self.assertEqual(response_one.status_code, 404)
-        self.assertEqual(response_two.status_code, 404)
-        self.assertEqual(response_three.status_code, 404)
-        self.assertEqual(response_four.status_code, 404)
 
     # Markdown functionality tests
     # ===
