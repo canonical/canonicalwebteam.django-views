@@ -35,7 +35,7 @@ def _template_exists(path):
     try:
         loader.get_template(path)
         return True
-    except (TemplateDoesNotExist, NotADirectoryError):
+    except (TemplateDoesNotExist, OSError):
         return False
 
 
