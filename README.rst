@@ -93,8 +93,8 @@ Here's an example Markdown file:
 
     I also have [a GitHub page](https://github.com/me).
 
-.. |CircleCI build status| image:: https://circleci.com/gh/canonical-webteam/yaml-responses.svg?style=shield
-   :target: https://circleci.com/gh/canonical-webteam/yaml-responses
-.. |Code coverage| image:: https://codecov.io/gh/canonical-webteam/yaml-responses/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/canonical-webteam/yaml-responses
+.. |CircleCI build status| image:: https://circleci.com/gh/canonical-web-and-design/canonicalwebteam.django-views.svg?style=shield
+   :target: https://circleci.com/gh/canonical-web-and-design/django-views
+.. |Code coverage| image:: https://codecov.io/gh/canonical-web-and-design/canonicalwebteam.django-views/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/canonical-web-and-design/django-views
 
