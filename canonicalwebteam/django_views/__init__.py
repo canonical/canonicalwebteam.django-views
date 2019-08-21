@@ -49,7 +49,8 @@ def _find_template_url(path):
 
     matches = []
 
-    template_dirs = loader.engines.templates["django"]["DIRS"]
+    first_engine_name = next(iter(loader.engines.templates))
+    template_dirs = loader.engines.templates[first_engine_name]["DIRS"]
 
     for template_dir in template_dirs:
         for match in (
@@ -145,7 +146,11 @@ class TemplateFinder(TemplateView):
 
         # Parse frontmatter, and add it to context
         markdown_template = loader.get_template(filepath)
-        file_contents = markdown_template.template.render(Context())
+
+        if markdown_template.backend.name == 'django':
+            file_contents = markdown_template.template.render(Context())
+        else:
+            file_contents = markdown_template.template.render()
         markdown = frontmatter.loads(file_contents)
 
         # Set the template path
@@ -167,9 +172,11 @@ class TemplateFinder(TemplateView):
             "markdown_includes", {}
         ).items():
             include_path = _relative_template_path(path, filepath)
-            include_content = loader.get_template(
-                include_path
-            ).template.render(Context())
+            include_template = loader.get_template(include_path)
+            if include_template.backend.name == 'django':
+                include_content = include_template.template.render(Context())
+            else:
+                include_content = include_template.template.render()
             context[key] = self.parse_markdown(include_content)
 
         return {"context": context, "template": template_filepath}

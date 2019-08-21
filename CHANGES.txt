@@ -6,3 +6,4 @@ v1.2.1, 2018-11-29 -- Complete test coverage
 v1.3.2, 2018-12-05 -- Case-insensitive matching
 v1.3.3, 2018-12-19 -- Fix 500 error with full filenames in URLs
 v1.3.4, 2019-02-07 -- Make _template_exists Python2 compatible
+v1.4.0a1, 2019-08-21 -- Support for Jinja2
