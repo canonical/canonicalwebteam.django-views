@@ -29,6 +29,7 @@ Here's an example of how to make use of ``TemplateFinder`` in your
 Django app:
 
 .. code:: python
+
     # urls.py
     from django.conf.urls import url
     from canonicalwebteam.django_views import TemplateFinder
@@ -76,7 +77,7 @@ frontmatter <https://jekyllrb.com/docs/front-matter/>`__:
 
 Here's an example Markdown file:
 
-.. code:: markdown
+.. code::
 
     ---
     wrapper_template: "/includes/markdown-wrapper.html"

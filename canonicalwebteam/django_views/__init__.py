@@ -147,7 +147,7 @@ class TemplateFinder(TemplateView):
         # Parse frontmatter, and add it to context
         markdown_template = loader.get_template(filepath)
 
-        if markdown_template.backend.name == 'django':
+        if markdown_template.backend.name == "django":
             file_contents = markdown_template.template.render(Context())
         else:
             file_contents = markdown_template.template.render()
@@ -173,7 +173,7 @@ class TemplateFinder(TemplateView):
         ).items():
             include_path = _relative_template_path(path, filepath)
             include_template = loader.get_template(include_path)
-            if include_template.backend.name == 'django':
+            if include_template.backend.name == "django":
                 include_content = include_template.template.render(Context())
             else:
                 include_content = include_template.template.render()
