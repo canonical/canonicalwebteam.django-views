@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='canonicalwebteam.django_views',
-    version='1.4.0a1',
+    version='1.4.0',
     author='Canonical webteam',
     author_email='webteam@canonical.com',
     url='https://github.com/canonicalwebteam/django_views',
