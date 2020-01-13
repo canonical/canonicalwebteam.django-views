@@ -4,21 +4,16 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='canonicalwebteam.django_views',
-    version='1.4.0',
-    author='Canonical webteam',
-    author_email='webteam@canonical.com',
-    url='https://github.com/canonicalwebteam/django_views',
+    name="canonicalwebteam.django_views",
+    version="1.4.0",
+    author="Canonical webteam",
+    author_email="webteam@canonical.com",
+    url="https://github.com/canonicalwebteam/django_views",
     packages=find_packages(),
-    description=(
-        "Shared Django views for use in Webteam apps"
-    ),
-    long_description=open('README.rst').read(),
-    install_requires=[
-        "mistune",
-        "python-frontmatter",
-        "django",
-    ],
+    description="Shared Django views for use in Webteam apps",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
+    install_requires=["mistune", "python-frontmatter", "django"],
     tests_require=["Django"],
     test_suite="tests",
 )
